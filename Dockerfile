@@ -1,22 +1,17 @@
-FROM 0x01be/coq as coq
-FROM 0x01be/bsc as bsc
+FROM 0x01be/kami:build as build
+FROM 0x01be/bsc:build as bsc
 
-FROM alpine as builder
+FROM alpine
 
-COPY --from=coq /opt/ /opt/
-COPY --from=bsc /opt/bsc/ /opt/bsc/
+COPY --from=build /opt/ /opt/
+COPY --from=bsc /bsc/src/vendor/yices/v2.6/yices2-inst/lib/* /usr/lib/
+COPY --from=bsc /bsc/src/vendor/stp/lib/* /usr/lib/
+
+RUN apk add --no-cache --virtual kami-runtime-dependencies \
+    tcl \
+    bash \
+    gmp \
+    libstdc++
 
 ENV PATH $PATH:/opt/ocaml/bin/:/opt/opam/bin/:/opt/coq/bin/:/opt/bsc/bin/
-
-RUN apk add --no-cache --virtual kami-build-dependencies \
-    git \
-    build-base
-
-ENV KAMI_REVISION rv32i
-RUN git clone --depth 1 --branch ${KAMI_REVISION} https://github.com/mit-plv/kami.git /kami
-
-WORKDIR /kami
-
-RUN make
-RUN make install
 
